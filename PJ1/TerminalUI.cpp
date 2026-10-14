@@ -52,7 +52,8 @@ std::string TerminalUI::progressBar(int current, int max, int width) {
     return bar;
 }
 
-void TerminalUI::displayGameState(const GameModule& game, const std::string& timeText) {
+void TerminalUI::displayGameState(const GameModule& game, const std::string& timeText,
+                                  const std::string& hint, int arrowIndex) {
     clearScreen();
     setColor(11, 0);
     std::cout << "  ZUMA - Command Line Edition\n";
@@ -72,6 +73,17 @@ void TerminalUI::displayGameState(const GameModule& game, const std::string& tim
         std::cout << " ";
     }
     std::cout << "\n";
+
+    if (arrowIndex >= 0) {
+        setColor(14, 0);
+        std::cout << std::string(9 + 2 * arrowIndex, ' ') << "^\n";
+        resetColor();
+    }
+    if (!hint.empty()) {
+        setColor(14, 0);
+        std::cout << "  Tutorial: " << hint << "\n";
+        resetColor();
+    }
 
     std::cout << "  Size: ";
     setColor(14, 0);
@@ -160,6 +172,24 @@ int TerminalUI::getMainChoice() {
     } catch (...) {
         return -1;
     }
+}
+
+void TerminalUI::displayTutorialIntro() {
+    setColor(14, 0);
+    std::cout << "\n  ================ TUTORIAL ================\n";
+    std::cout << "  Learn the basics in 4 guided steps:\n";
+    std::cout << "   1. Insert a ball by typing a position number\n";
+    std::cout << "   2. The FEED ball joins the track after each turn\n";
+    std::cout << "   3. Discard a useless ball by typing 'd'\n";
+    std::cout << "   4. Clear the whole track to win\n";
+    std::cout << "  ==========================================\n";
+    resetColor();
+}
+
+void TerminalUI::displayTutorialError(const std::string& expected) {
+    setColor(14, 0);
+    std::cout << "  [Tutorial] Follow the hint! Expected input: '" << expected << "'\n";
+    resetColor();
 }
 
 void TerminalUI::displayLevelMenu(const std::vector<std::string>& names) {

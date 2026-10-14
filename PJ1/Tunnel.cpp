@@ -17,21 +17,38 @@ const int SURVIVAL_MAX_SIZE = 50;
 struct LevelInfo {
     std::string label;
     std::string file;
+    bool tutorial;
+};
+
+struct TutorialStep {
+    std::string input;
+    int arrow;
+    std::string hint;
 };
 
 static const LevelInfo LEVELS[] = {
-    {"Level 1", "levels/level1.txt"},
-    {"Level 2", "levels/level2.txt"},
-    {"Level 3", "levels/level3.txt"},
-    {"Level 4", "levels/level4.txt"},
-    {"Level 5", "levels/level5.txt"},
-    {"Level 6", "levels/level6.txt"},
-    {"Level 7", "levels/level7.txt"},
+    {"Tutorial (New Player Guide)", "levels/tutorial.txt", true},
+    {"Level 1", "levels/level1.txt", false},
+    {"Level 2", "levels/level2.txt", false},
+    {"Level 3", "levels/level3.txt", false},
+    {"Level 4", "levels/level4.txt", false},
+    {"Level 5", "levels/level5.txt", false},
+    {"Level 6", "levels/level6.txt", false},
+    {"Level 7", "levels/level7.txt", false},
 };
 const int LEVEL_COUNT = sizeof(LEVELS) / sizeof(LEVELS[0]);
 
+static const TutorialStep TUTORIAL_STEPS[] = {
+    {"2", 2, "STEP 1/4: Type 2 to place the R at the arrow. Three same-color balls in a row are cleared!"},
+    {"2", 2, "STEP 2/4: A waiting ball joins the track tail each turn (the G). Type 2 to clear the three B's!"},
+    {"d", -1, "STEP 3/4: A useless ball can be discarded: type d. Try it!"},
+    {"2", 2, "STEP 4/4: Clear the whole track to WIN. Type 2 to finish the last two G's!"},
+};
+const int TUTORIAL_STEP_COUNT = sizeof(TUTORIAL_STEPS) / sizeof(TUTORIAL_STEPS[0]);
+
 Tunnel::Tunnel() : running(true), totalPausedMs(0), isPaused(false),
-    currentMode(GameMode::NORMAL), survivalRewardMs(0), soundEnabled(false) {
+    currentMode(GameMode::NORMAL), survivalRewardMs(0), soundEnabled(false),
+    currentTutorial(false), tutorialStep(0) {
     rankBoard.setFilename(RANK_FILE);
     rankBoard.load();
 }
@@ -146,6 +163,13 @@ void Tunnel::run() {
         } else if (choice == 1) {
             int level = selectLevel();
             if (level == 0) continue;
+
+            const LevelInfo& lv = LEVELS[level - 1];
+            if (lv.tutorial) {
+                playLevel(lv.file, GameMode::NORMAL);
+                continue;
+            }
+
             int mode = selectMode();
             if (mode == 0) continue;
 
@@ -153,7 +177,7 @@ void Tunnel::run() {
             if (mode == 2) gm = GameMode::ENDLESS;
             else if (mode == 3) gm = GameMode::TIMED;
             else if (mode == 4) gm = GameMode::SURVIVAL;
-            playLevel(LEVELS[level - 1].file, gm);
+            playLevel(lv.file, gm);
         } else if (choice == 10) {
             showSettings();
         } else if (choice == 2) {
@@ -170,6 +194,8 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
     currentMode = mode;
     currentFilename = filename;
     survivalRewardMs = 0;
+    currentTutorial = false;
+    tutorialStep = 0;
 
     if (loadSave) {
         if (!game.load(SAVE_FILE)) {
@@ -189,6 +215,7 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
         int maxSize = data.maxSize;
         if (mode == GameMode::SURVIVAL) maxSize = SURVIVAL_MAX_SIZE;
         game.initialize(data.active, data.feed, data.ammo, maxSize, endless);
+        currentTutorial = data.tutorial;
     }
 
     startTime = std::chrono::steady_clock::now();
@@ -203,6 +230,11 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
     std::cout << " [" << modeName << "]\n";
     std::cout << "  Initial track: " << game.getBalls() << "\n";
     std::cout << "  Max length: " << game.getMaxSize() << "\n";
+
+    if (currentTutorial) {
+        TerminalUI::displayTutorialIntro();
+        TerminalUI::pauseScreen();
+    }
 
     bool win = false;
     while (!game.isGameOver() && !game.isWin() && !timeExpired()) {
@@ -224,7 +256,7 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
     }
     TerminalUI::pauseScreen();
 
-    if (!loadSave) {
+    if (!loadSave && !currentTutorial) {
         recordResult(filename, currentMode, win);
     }
 }
@@ -233,7 +265,14 @@ bool Tunnel::playTurn() {
     history.push_back(game.getSnapshot());
     if (history.size() > 100) history.erase(history.begin());
 
-    TerminalUI::displayGameState(game, timeLabel());
+    bool tuto = currentTutorial && tutorialStep < TUTORIAL_STEP_COUNT;
+    if (tuto) {
+        TerminalUI::displayGameState(game, timeLabel(),
+                                     TUTORIAL_STEPS[tutorialStep].hint,
+                                     TUTORIAL_STEPS[tutorialStep].arrow);
+    } else {
+        TerminalUI::displayGameState(game, timeLabel());
+    }
 
     bool timedOut = false;
     std::string input;
@@ -250,6 +289,18 @@ bool Tunnel::playTurn() {
     if (input.empty()) {
         TerminalUI::displayInvalidInput();
         return true;
+    }
+
+    if (tuto) {
+        std::string got = input;
+        for (size_t i = 0; i < got.size(); i++) got[i] = (char)tolower((unsigned char)got[i]);
+        char c0 = got[0];
+        if (c0 != 'p' && c0 != 'q' && c0 != 'r' && got != TUTORIAL_STEPS[tutorialStep].input) {
+            TerminalUI::displayTutorialError(TUTORIAL_STEPS[tutorialStep].input);
+            Sleep(900);
+            history.pop_back();
+            return true;
+        }
     }
 
     bool numeric = true;
@@ -292,9 +343,7 @@ bool Tunnel::playTurn() {
         }
         if (c == 'd') {
             game.discardBall();
-            game.feedBall();
-            game.advanceAmmo();
-            game.incrementTurnCount();
+            finishTurn();
             return true;
         }
         if (c == 'i') {
@@ -321,10 +370,15 @@ bool Tunnel::playTurn() {
         return true;
     }
 
+    finishTurn();
+    return true;
+}
+
+void Tunnel::finishTurn() {
     game.feedBall();
     game.advanceAmmo();
     game.incrementTurnCount();
-    return true;
+    if (currentTutorial && tutorialStep < TUTORIAL_STEP_COUNT) tutorialStep++;
 }
 
 bool Tunnel::handlePause() {
@@ -380,6 +434,8 @@ void Tunnel::showSettings() {
                     currentFilename = path;
                     currentMode = GameMode::NORMAL;
                     survivalRewardMs = 0;
+                    currentTutorial = false;
+                    tutorialStep = 0;
                     startTime = std::chrono::steady_clock::now();
                     totalPausedMs = 0;
                     isPaused = false;

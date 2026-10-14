@@ -51,6 +51,10 @@ bool LevelPlugin::validate(const std::string& filename, LevelData& outData,
             } catch (...) {
                 errors.push_back({"MAX_LENGTH", "Not a number: " + value});
             }
+        } else if (key == "TUTORIAL") {
+            if (value == "1") outData.tutorial = true;
+            else if (value == "0") outData.tutorial = false;
+            else errors.push_back({"TUTORIAL", "Must be 0 or 1, got: " + value});
         } else {
             errors.push_back({"FORMAT", "Unknown field: " + key});
         }

@@ -8,12 +8,15 @@
 
 class TerminalUI {
 public:
-    static void displayGameState(const GameModule& game, const std::string& timeText);
+    static void displayGameState(const GameModule& game, const std::string& timeText,
+                                 const std::string& hint = "", int arrowIndex = -1);
     static void displayAnimation(const std::string& track, const std::string& action,
                                  int start, int len, int chainLevel,
                                  int score, int turn, const std::string& timeText);
     static void displayMenu();
     static int getMainChoice();
+    static void displayTutorialIntro();
+    static void displayTutorialError(const std::string& expected);
     static void displayLevelMenu(const std::vector<std::string>& names);
     static int getLevelChoice();
     static void displayModeMenu();

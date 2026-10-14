@@ -25,6 +25,8 @@ private:
     GameMode currentMode;
     long long survivalRewardMs;
     bool soundEnabled;
+    bool currentTutorial;
+    int tutorialStep;
     std::string currentFilename;
     std::vector<GameModule::Snapshot> history;
 
@@ -41,6 +43,7 @@ private:
     int selectMode();
     void playLevel(const std::string& filename, GameMode mode, bool loadSave = false);
     bool playTurn();
+    void finishTurn();
     bool handlePause();
     void showRankBoard();
     void showSettings();

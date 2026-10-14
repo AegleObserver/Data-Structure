@@ -8,6 +8,7 @@ struct LevelData {
     std::string feed;
     std::string ammo;
     int maxSize;
+    bool tutorial = false;
 };
 
 class FileReader {

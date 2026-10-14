@@ -25,6 +25,7 @@ LevelData FileReader::readLevel(const std::string& filename) {
         else if (key == "FEED") data.feed = value;
         else if (key == "AMMO") data.ammo = value;
         else if (key == "MAX_LENGTH") data.maxSize = std::stoi(value);
+        else if (key == "TUTORIAL") data.tutorial = (value == "1");
     }
 
     file.close();
