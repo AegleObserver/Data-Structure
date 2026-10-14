@@ -14,6 +14,22 @@ const long long SURVIVAL_START_MS = 60000;
 const long long SURVIVAL_REWARD_PER_BALL_MS = 500;
 const int SURVIVAL_MAX_SIZE = 50;
 
+struct LevelInfo {
+    std::string label;
+    std::string file;
+};
+
+static const LevelInfo LEVELS[] = {
+    {"Level 1", "levels/level1.txt"},
+    {"Level 2", "levels/level2.txt"},
+    {"Level 3", "levels/level3.txt"},
+    {"Level 4", "levels/level4.txt"},
+    {"Level 5", "levels/level5.txt"},
+    {"Level 6", "levels/level6.txt"},
+    {"Level 7", "levels/level7.txt"},
+};
+const int LEVEL_COUNT = sizeof(LEVELS) / sizeof(LEVELS[0]);
+
 Tunnel::Tunnel() : running(true), totalPausedMs(0), isPaused(false),
     currentMode(GameMode::NORMAL), survivalRewardMs(0), soundEnabled(false) {
     rankBoard.setFilename(RANK_FILE);
@@ -100,9 +116,11 @@ void Tunnel::playSound(const std::string& type) {
 
 int Tunnel::selectLevel() {
     while (true) {
-        TerminalUI::displayLevelMenu();
+        std::vector<std::string> names;
+        for (int i = 0; i < LEVEL_COUNT; i++) names.push_back(LEVELS[i].label);
+        TerminalUI::displayLevelMenu(names);
         int choice = TerminalUI::getLevelChoice();
-        if (choice == 1 || choice == 2) return choice;
+        if (choice >= 1 && choice <= LEVEL_COUNT) return choice;
         if (choice == 0) return 0;
         TerminalUI::displayInvalidInput();
     }
@@ -131,12 +149,11 @@ void Tunnel::run() {
             int mode = selectMode();
             if (mode == 0) continue;
 
-            std::string file = (level == 1) ? "levels/level1.txt" : "levels/level2.txt";
             GameMode gm = GameMode::NORMAL;
             if (mode == 2) gm = GameMode::ENDLESS;
             else if (mode == 3) gm = GameMode::TIMED;
             else if (mode == 4) gm = GameMode::SURVIVAL;
-            playLevel(file, gm);
+            playLevel(LEVELS[level - 1].file, gm);
         } else if (choice == 10) {
             showSettings();
         } else if (choice == 2) {
@@ -394,9 +411,13 @@ void Tunnel::showSettings() {
 }
 
 void Tunnel::recordResult(const std::string& filename, GameMode mode, bool win) {
-    std::string level = "unknown";
-    if (filename.find("level1") != std::string::npos) level = "Level1";
-    else if (filename.find("level2") != std::string::npos) level = "Level2";
+    std::string level = "Unknown";
+    size_t slash = filename.find_last_of("/\\");
+    std::string base = (slash == std::string::npos) ? filename : filename.substr(slash + 1);
+    size_t dot = base.find('.');
+    if (dot != std::string::npos) base = base.substr(0, dot);
+    if (base.size() > 5 && base.substr(0, 5) == "level") level = "Level" + base.substr(5);
+    else if (!base.empty()) level = base;
 
     std::string modeName = "Normal";
     if (mode == GameMode::ENDLESS) modeName = "Endless";

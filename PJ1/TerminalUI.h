@@ -3,6 +3,7 @@
 
 #include "GameModule.h"
 #include <string>
+#include <vector>
 #include <functional>
 
 class TerminalUI {
@@ -13,7 +14,7 @@ public:
                                  int score, int turn, const std::string& timeText);
     static void displayMenu();
     static int getMainChoice();
-    static void displayLevelMenu();
+    static void displayLevelMenu(const std::vector<std::string>& names);
     static int getLevelChoice();
     static void displayModeMenu();
     static int getModeChoice();

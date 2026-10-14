@@ -162,13 +162,14 @@ int TerminalUI::getMainChoice() {
     }
 }
 
-void TerminalUI::displayLevelMenu() {
+void TerminalUI::displayLevelMenu(const std::vector<std::string>& names) {
     clearScreen();
     setColor(11, 0);
     std::cout << "\n  --- Select Level ---\n";
     resetColor();
-    std::cout << "  1. Level 1\n";
-    std::cout << "  2. Level 2\n";
+    for (size_t i = 0; i < names.size(); i++) {
+        std::cout << "  " << (i + 1) << ". " << names[i] << "\n";
+    }
     std::cout << "  0. Back\n";
     std::cout << "  Choose: ";
 }
