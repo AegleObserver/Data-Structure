@@ -6,7 +6,7 @@
 #include "LevelPlugin.h"
 #include <chrono>
 
-enum class GameMode { NORMAL, ENDLESS, TIMED, SURVIVAL };
+enum class GameMode { NORMAL, ENDLESS, TIMED, SURVIVAL, CHAMELEON };
 
 class Tunnel {
 public:

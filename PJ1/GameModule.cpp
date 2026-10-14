@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
+#include <algorithm>
 
 GameModule::GameModule() : ammoIndex(0), maxSize(10), score(0), turnCount(0),
     currentBall(' '), nextBall(' '), endlessMode(false) {
@@ -14,6 +15,7 @@ void GameModule::initialize(const std::string& active, const std::string& feed,
                              const std::string& ammo, int maxSize, bool endless) {
     if (ammo.size() < 2) return;
     balls = active;
+    marks.assign(active.size(), 0);
     this->maxSize = maxSize;
     score = 0;
     turnCount = 0;
@@ -28,18 +30,34 @@ void GameModule::initialize(const std::string& active, const std::string& feed,
 bool GameModule::insertBall(char ball, int index, ElimCallback cb) {
     if (index < 0 || index > (int)balls.size()) return false;
     balls.insert(index, 1, ball);
+    marks.insert(marks.begin() + index, 1, 0);
     resolve(index, cb);
     return true;
 }
 
 void GameModule::discardBall() {}
 
+int GameModule::applyChameleon() {
+    if (balls.empty()) return -1;
+    int index = std::rand() % (int)balls.size();
+    char oldColor = balls[index];
+    const char types[5] = {'R', 'G', 'B', 'Y', 'P'};
+    char newColor = oldColor;
+    while (newColor == oldColor) newColor = types[std::rand() % 5];
+    balls[index] = newColor;
+    std::fill(marks.begin(), marks.end(), 0);
+    marks[index] = 1;
+    return index;
+}
+
 void GameModule::feedBall() {
     if (!feedQueue.empty()) {
         balls.push_back(feedQueue.front());
         feedQueue.pop_front();
+        marks.push_back(0);
     } else if (endlessMode) {
         balls.push_back(randomBall());
+        marks.push_back(0);
     }
 }
 
@@ -63,6 +81,7 @@ bool GameModule::isWin() const {
 }
 
 std::string GameModule::getBalls() const { return balls; }
+const std::vector<char>& GameModule::getMarks() const { return marks; }
 int GameModule::getSize() const { return (int)balls.size(); }
 int GameModule::getScore() const { return score; }
 int GameModule::getWaitingCount() const { return (int)feedQueue.size(); }
@@ -120,6 +139,7 @@ bool GameModule::load(const std::string& filename) {
         else if (key == "ENDLESS") endlessMode = (value == "1");
     }
     file.close();
+    marks.assign(balls.size(), 0);
     return !ammo.empty();//进行存档读取，同时给出ammo的状态
 }
 
@@ -135,6 +155,7 @@ GameModule::Snapshot GameModule::getSnapshot() const {
     s.currentBall = currentBall;
     s.nextBall = nextBall;
     s.endlessMode = endlessMode;
+    s.marks = marks;
     return s;
 }
 
@@ -149,6 +170,7 @@ void GameModule::applySnapshot(const Snapshot& snap) {
     currentBall = snap.currentBall;
     nextBall = snap.nextBall;
     endlessMode = snap.endlessMode;
+    marks = snap.marks;
 }
 
 void GameModule::resolve(int index, ElimCallback cb) {
@@ -164,6 +186,7 @@ void GameModule::resolve(int index, ElimCallback cb) {
         std::string action = (chainLevel == 1) ? "eliminate" : "chain";
         if (cb) cb(balls, action, l, len, chainLevel);
         balls.erase(l, len);
+        marks.erase(marks.begin() + l, marks.begin() + l + len);
         score += countScore(len, chainLevel);
         chainLevel++;
         if (l == 0 || l >= (int)balls.size()) break;

@@ -74,6 +74,22 @@ void TerminalUI::displayGameState(const GameModule& game, const std::string& tim
     }
     std::cout << "\n";
 
+    const std::vector<char>& marks = game.getMarks();
+    bool marked = false;
+    for (size_t i = 0; i < marks.size(); i++) {
+        if (marks[i]) { marked = true; break; }
+    }
+    if (marked) {
+        setColor(12, 0);
+        std::string markLine(9, ' ');
+        for (size_t i = 0; i < track.size(); i++) {
+            markLine += (i < marks.size() && marks[i]) ? '^' : ' ';
+            markLine += ' ';
+        }
+        std::cout << markLine << "\n";
+        resetColor();
+    }
+
     if (arrowIndex >= 0) {
         setColor(14, 0);
         std::cout << std::string(9 + 2 * arrowIndex, ' ') << "^\n";
@@ -223,6 +239,7 @@ void TerminalUI::displayModeMenu() {
     std::cout << "  2. Endless\n";
     std::cout << "  3. Timed (2:00)\n";
     std::cout << "  4. Survival\n";
+    std::cout << "  5. Chameleon\n";
     std::cout << "  0. Back\n";
     std::cout << "  Choose: ";
 }

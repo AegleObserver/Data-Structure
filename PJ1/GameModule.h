@@ -3,6 +3,7 @@
 
 #include <string>
 #include <deque>
+#include <vector>
 #include <functional>
 
 using ElimCallback = std::function<void(const std::string&, const std::string&, int, int, int)>;
@@ -17,6 +18,7 @@ public:
 
     bool insertBall(char ball, int index, ElimCallback cb = nullptr);
     void discardBall();
+    int applyChameleon();
     void feedBall();
     void advanceAmmo();
     void incrementTurnCount();
@@ -25,6 +27,7 @@ public:
     bool isWin() const;
 
     std::string getBalls() const;
+    const std::vector<char>& getMarks() const;
     int getSize() const;
     int getScore() const;
     int getWaitingCount() const;
@@ -50,6 +53,7 @@ public:
         char currentBall;
         char nextBall;
         bool endlessMode;
+        std::vector<char> marks;
     };
 
     Snapshot getSnapshot() const;
@@ -66,6 +70,7 @@ private:
     char currentBall;
     char nextBall;
     bool endlessMode;
+    std::vector<char> marks;
 
     void resolve(int index, ElimCallback cb = nullptr);
     int countScore(int len, int chainLevel);

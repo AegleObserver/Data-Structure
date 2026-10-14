@@ -147,7 +147,7 @@ int Tunnel::selectMode() {
     while (true) {
         TerminalUI::displayModeMenu();
         int choice = TerminalUI::getModeChoice();
-        if (choice >= 1 && choice <= 4) return choice;
+        if (choice >= 1 && choice <= 5) return choice;
         if (choice == 0) return 0;
         TerminalUI::displayInvalidInput();
     }
@@ -177,6 +177,7 @@ void Tunnel::run() {
             if (mode == 2) gm = GameMode::ENDLESS;
             else if (mode == 3) gm = GameMode::TIMED;
             else if (mode == 4) gm = GameMode::SURVIVAL;
+            else if (mode == 5) gm = GameMode::CHAMELEON;
             playLevel(lv.file, gm);
         } else if (choice == 10) {
             showSettings();
@@ -227,6 +228,7 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
     if (currentMode == GameMode::ENDLESS) modeName = "Endless";
     else if (currentMode == GameMode::TIMED) modeName = "Timed (2:00)";
     else if (currentMode == GameMode::SURVIVAL) modeName = "Survival";
+    else if (currentMode == GameMode::CHAMELEON) modeName = "Chameleon";
     std::cout << " [" << modeName << "]\n";
     std::cout << "  Initial track: " << game.getBalls() << "\n";
     std::cout << "  Max length: " << game.getMaxSize() << "\n";
@@ -378,6 +380,7 @@ void Tunnel::finishTurn() {
     game.feedBall();
     game.advanceAmmo();
     game.incrementTurnCount();
+    if (currentMode == GameMode::CHAMELEON) game.applyChameleon();
     if (currentTutorial && tutorialStep < TUTORIAL_STEP_COUNT) tutorialStep++;
 }
 
@@ -479,6 +482,7 @@ void Tunnel::recordResult(const std::string& filename, GameMode mode, bool win) 
     if (mode == GameMode::ENDLESS) modeName = "Endless";
     else if (mode == GameMode::TIMED) modeName = "Timed";
     else if (mode == GameMode::SURVIVAL) modeName = "Survival";
+    else if (mode == GameMode::CHAMELEON) modeName = "Chameleon";
 
     std::string name;
     std::cout << "  Enter your name for the rankboard: ";
