@@ -48,7 +48,7 @@ make rebuild  # 重新编译
 ### 手动编译
 
 ```
-g++ Init.cpp GameModule.cpp FileReader.cpp TerminalUI.cpp Tunnel.cpp RankBoard.cpp LevelPlugin.cpp -o zuma.exe
+g++ Init.cpp GameModule.cpp FileReader.cpp TerminalUI.cpp Tunnel.cpp RankBoard.cpp -o zuma.exe
 ```
 
 ## 运行
@@ -75,7 +75,19 @@ zuma.exe
 | 普通 | 在轨道超过上限前清空所有球 |
 | 无尽 | FEED 用完后随机补球，尽可能生存 |
 | 限时 | **总限时 2 分钟**，倒计时走完前清空所有球即胜利；倒计时实时进行 |
-| 生存 | 上限 50 球，FEED 随机补球；**消除可延长时间**——消除球数越多、连锁层数越高，延长时间越多；时间耗尽或轨道超限即失败 |
+| 生存 | 上限 50 球，FEED 随机补球；**消除可延长时间**——消除球数越多、连锁层数越高，延长时间越多；时间耗尽或轨道超限即失败。起始限时默认 60 秒，可在设置中修改（10 - 600 秒） |
+| 变色龙 | 每次释放彩球后，轨道中随机一球变为随机异色，被变色的球以 `^` 标出，需尽快处理 |
+
+## 新手教程
+
+选关列表第一项为教程关卡（`levels/tutorial.txt`，`TUTORIAL=1`）。教程的轨道 / FEED / 弹药固定，共 4 步引导：
+
+1. 按提示输入数字，把彩球插入箭头 `^` 所指位置，凑成 3 连消除
+2. 观察回合结束后 FEED 的球进入轨道尾部
+3. 按 `d` 丢弃无用的当前球
+4. 清空轨道获胜
+
+教程每一步只接受提示中的操作，输入其他内容会给出提示且不消耗回合（`p` / `q` / `r` 仍可用）；教程结算不计入排行榜。
 
 ## 操作说明
 
@@ -85,16 +97,26 @@ zuma.exe
 1. Start Game   → 选关卡 → 选模式 → 开始游戏
 2. Load Save    → 读取上次存档继续
 3. Rankboard    → 查看排行榜
+M. Settings     → 设置（生存限时 / 音效开关）
 0. Quit         → 退出
 ```
 
 ### 选关卡 / 选模式
 
 ```
-1. Level 1 / 1. Normal
-2. Level 2 / 2. Endless
-            3. Timed (2:00)
-            4. Survival
+1. Tutorial（新手引导，直接进入，无需选模式）
+2. Level 1
+...
+8. Level 7
+0. Back（返回上一级）
+```
+
+```
+1. Normal
+2. Endless
+3. Timed (2:00)
+4. Survival
+5. Chameleon
 0. Back（返回上一级）
 ```
 
@@ -120,6 +142,14 @@ zuma.exe
 2. Quit to Main Menu  回主菜单
 ```
 
+### 设置菜单
+
+```
+1. Survival Time Limit  修改生存模式起始限时（10 - 600 秒，默认 60 秒）
+2. Sound Effect         音效开关
+0. Back
+```
+
 ## 存档与排行榜
 
 - 游玩中按 `s` 或暂停前存档，写入 `saves/save.txt`
@@ -136,12 +166,21 @@ ACTIVE=RRBBRR
 FEED=GBYPRGBGYRBPYG
 AMMO=BBGYRRGBYPRG
 MAX_LENGTH=12
+TUTORIAL=0
 ```
 
 - `ACTIVE`：初始轨道上的球
 - `FEED`：等待进入轨道的球（每回合进一个）
 - `AMMO`：弹药循环序列（第一个字符为初始当前球，第二个为初始下一个球）
 - `MAX_LENGTH`：轨道球数上限，超过则失败
+- `TUTORIAL`：可选，置 `1` 时该关为引导教程（启用固定操作脚本与提示）
+
+内置关卡：
+
+| 文件 | 说明 |
+|---|---|
+| `levels/tutorial.txt` | 新手引导（固定脚本，4 步教学） |
+| `levels/level1.txt` ~ `level7.txt` | 普通关卡，球数与上限逐关提升 |
 
 ## 计分规则
 
@@ -156,11 +195,10 @@ MAX_LENGTH=12
 
 | 文件 | 职责 |
 |---|---|
-| `GameModule.h/cpp` | 核心逻辑：球链、插入、消除、计分、存档/读档、快照 |
+| `GameModule.h/cpp` | 核心逻辑：球链、插入、消除、计分、变色标记、存档/读档、快照 |
 | `FileReader.h/cpp` | 从 `levels/` 读取并解析关卡文件 |
-| `LevelPlugin.h/cpp` | 外部关卡文件的健壮性校验与错误报告 |
-| `TerminalUI.h/cpp` | 命令行显示、彩色输出、输入、限时输入、菜单 |
-| `Tunnel.h/cpp` | 游戏流程控制：回合循环、弹药、补球、计时、撤销、排行榜 |
+| `TerminalUI.h/cpp` | 命令行显示、彩色输出、输入、限时输入、菜单、教学提示 |
+| `Tunnel.h/cpp` | 游戏流程控制：回合循环、弹药、补球、计时、撤销、教程脚本、排行榜、设置 |
 | `RankBoard.h/cpp` | 排行榜存储、排序、显示 |
 | `Init.cpp` | 程序入口 |
 
@@ -170,6 +208,7 @@ MAX_LENGTH=12
 |---|---|
 | `std::string`（动态数组） | 球链轨道、弹药序列 |
 | `std::deque<char>`（双端队列） | FEED 等待区，FIFO 补球 |
+| `std::vector<char>`（并行标记数组） | 变色龙模式中被变色球的标记，与球链等长同步 |
 | `std::vector<RankEntry>` | 排行榜记录列表 |
 | `std::vector<GameModule::Snapshot>`（栈） | 撤销历史记录 |
 | `struct LevelData` | 关卡配置数据聚合 |
