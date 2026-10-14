@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++11
 TARGET = zuma.exe
-SRCS = Init.cpp GameModule.cpp FileReader.cpp TerminalUI.cpp Tunnel.cpp RankBoard.cpp LevelPlugin.cpp
+SRCS = Init.cpp GameModule.cpp FileReader.cpp TerminalUI.cpp Tunnel.cpp RankBoard.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 all: $(TARGET)

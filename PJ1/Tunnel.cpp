@@ -10,7 +10,7 @@ const std::string SAVE_FILE = "saves/save.txt";
 const std::string RANK_FILE = "saves/rank.txt";
 
 const long long TIMED_LIMIT_MS = 120000;
-const long long SURVIVAL_START_MS = 60000;
+const long long SURVIVAL_DEFAULT_MS = 60000;
 const long long SURVIVAL_REWARD_PER_BALL_MS = 500;
 const int SURVIVAL_MAX_SIZE = 50;
 
@@ -47,7 +47,8 @@ static const TutorialStep TUTORIAL_STEPS[] = {
 const int TUTORIAL_STEP_COUNT = sizeof(TUTORIAL_STEPS) / sizeof(TUTORIAL_STEPS[0]);
 
 Tunnel::Tunnel() : running(true), totalPausedMs(0), isPaused(false),
-    currentMode(GameMode::NORMAL), survivalRewardMs(0), soundEnabled(false),
+    currentMode(GameMode::NORMAL), survivalStartMs(SURVIVAL_DEFAULT_MS),
+    survivalRewardMs(0), soundEnabled(false),
     currentTutorial(false), tutorialStep(0) {
     rankBoard.setFilename(RANK_FILE);
     rankBoard.load();
@@ -62,7 +63,7 @@ long long Tunnel::currentElapsedMs() const {
 }
 
 long long Tunnel::survivalRemainingMs() const {
-    return SURVIVAL_START_MS + survivalRewardMs - currentElapsedMs();
+    return survivalStartMs + survivalRewardMs - currentElapsedMs();
 }
 
 long long Tunnel::timeRemainingMs() const {
@@ -413,50 +414,25 @@ void Tunnel::showRankBoard() {
 
 void Tunnel::showSettings() {
     while (true) {
-        TerminalUI::displaySettingsMenu(soundEnabled);
+        TerminalUI::displaySettingsMenu(soundEnabled, survivalStartMs);
         int choice = TerminalUI::getSettingsChoice();
 
         if (choice == 1) {
-            std::string path;
-            std::cout << "  Enter level file path (or 'b' to go back): ";
-            std::cin >> path;
-            if (path == "b" || path == "B" || path == "q" || path == "Q") {
+            std::cout << "  Enter survival time limit in seconds (10-600): ";
+            int secs;
+            if (!(std::cin >> secs)) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+                TerminalUI::displayInvalidInput();
                 continue;
             }
-            LevelData data;
-            std::vector<ValidationError> errs;
-            if (LevelPlugin::validate(path, data, errs)) {
-                std::cout << "  Level loaded successfully!\n";
-                std::cout << "  ACTIVE=" << data.active << " FEED=" << data.feed
-                          << " AMMO=" << data.ammo << " MAX=" << data.maxSize << "\n";
-                std::cout << "  Start game with this level? (y/n): ";
-                char yn;
-                std::cin >> yn;
-                if (yn == 'y' || yn == 'Y') {
-                    game.initialize(data.active, data.feed, data.ammo, data.maxSize, false);
-                    currentFilename = path;
-                    currentMode = GameMode::NORMAL;
-                    survivalRewardMs = 0;
-                    currentTutorial = false;
-                    tutorialStep = 0;
-                    startTime = std::chrono::steady_clock::now();
-                    totalPausedMs = 0;
-                    isPaused = false;
-                    bool win = false;
-                    while (!game.isGameOver() && !game.isWin()) {
-                        if (!playTurn()) break;
-                    }
-                    win = game.isWin();
-                    long long elapsed = currentElapsedMs();
-                    if (win) { TerminalUI::displayWin(game.getScore(), game.getTurnCount(), formatTime(elapsed)); playSound("win"); }
-                    else if (game.isGameOver()) { TerminalUI::displayLose(game.getScore(), game.getTurnCount(), formatTime(elapsed), "Track exceeded max length!"); playSound("lose"); }
-                    TerminalUI::pauseScreen();
-                }
-                TerminalUI::pauseScreen();
-            } else {
-                LevelPlugin::reportErrors(errs);
-                TerminalUI::pauseScreen();
+            if (secs < 10 || secs > 600) {
+                TerminalUI::displayInvalidInput();
+                continue;
             }
+            survivalStartMs = (long long)secs * 1000;
+            std::cout << "  Survival time limit set to " << secs << "s.\n";
+            TerminalUI::pauseScreen();
         } else if (choice == 2) {
             soundEnabled = !soundEnabled;
             std::cout << "  Sound Effect: " << (soundEnabled ? "ON" : "OFF") << "\n";

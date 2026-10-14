@@ -30,7 +30,7 @@ public:
     static void pauseScreen();
     static void displayPauseMenu();
     static int getPauseChoice();
-    static void displaySettingsMenu(bool soundOn);
+    static void displaySettingsMenu(bool soundOn, long long survivalLimitMs);
     static int getSettingsChoice();
 
 private:

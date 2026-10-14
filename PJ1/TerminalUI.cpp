@@ -370,12 +370,16 @@ int TerminalUI::getPauseChoice() {
     return choice;
 }
 
-void TerminalUI::displaySettingsMenu(bool soundOn) {
+void TerminalUI::displaySettingsMenu(bool soundOn, long long survivalLimitMs) {
     clearScreen();
     setColor(13, 0);
     std::cout << "\n  ========== Settings ==========\n";
     resetColor();
-    std::cout << "  1. Load Level Plugin\n";
+    std::string mins = std::to_string(survivalLimitMs / 60000);
+    if (mins.size() < 2) mins = "0" + mins;
+    std::string secs = std::to_string((survivalLimitMs % 60000) / 1000);
+    if (secs.size() < 2) secs = "0" + secs;
+    std::cout << "  1. Survival Time Limit: " << mins << ":" << secs << "\n";
     std::cout << "  2. Sound Effect: ";
     if (soundOn) {
         setColor(10, 0);

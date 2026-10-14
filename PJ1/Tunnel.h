@@ -3,7 +3,6 @@
 
 #include "GameModule.h"
 #include "RankBoard.h"
-#include "LevelPlugin.h"
 #include <chrono>
 
 enum class GameMode { NORMAL, ENDLESS, TIMED, SURVIVAL, CHAMELEON };
@@ -23,6 +22,7 @@ private:
     long long totalPausedMs;
     bool isPaused;
     GameMode currentMode;
+    long long survivalStartMs;
     long long survivalRewardMs;
     bool soundEnabled;
     bool currentTutorial;
