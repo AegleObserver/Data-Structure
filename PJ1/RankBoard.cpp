@@ -3,7 +3,38 @@
 #include <iostream>
 #include <algorithm>
 #include <sstream>
+#include <iomanip>
 #include <windows.h>
+
+static int displayWidth(const std::string& s) {
+    int w = 0;
+    for (size_t i = 0; i < s.size(); i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c >= 0x80 && c <= 0xBF) continue;
+        w += (c >= 0xE0) ? 2 : 1;
+    }
+    return w;
+}
+
+static std::string padTo(const std::string& s, int width) {
+    std::string r = s;
+    for (int i = displayWidth(s); i < width; i++) r += ' ';
+    return r;
+}
+
+static std::string truncateTo(const std::string& s, int maxW) {
+    std::string r;
+    int w = 0;
+    for (size_t i = 0; i < s.size(); i++) {
+        unsigned char c = (unsigned char)s[i];
+        if (c >= 0x80 && c <= 0xBF) { r += (char)c; continue; }
+        int cw = (c >= 0xE0) ? 2 : 1;
+        if (w + cw > maxW) break;
+        w += cw;
+        r += (char)c;
+    }
+    return r;
+}
 
 RankBoard::RankBoard() {}
 
@@ -58,7 +89,9 @@ void RankBoard::save() {
 }
 
 void RankBoard::addEntry(const RankEntry& entry) {
-    entries.push_back(entry);
+    RankEntry e = entry;
+    e.name = truncateTo(e.name, 12);
+    entries.push_back(e);
 }
 
 void RankBoard::display() const {
@@ -84,11 +117,17 @@ void RankBoard::display() const {
         return a.timeMs < b.timeMs;
     });
 
+    const int NAME_W = 12, LEVEL_W = 7, MODE_W = 10, TIME_W = 5, SCORE_W = 6;
+
     std::cout << "--- CLEARED (by time) ---\n";
     if (cleared.empty()) {
         std::cout << "No cleared records.\n";
     } else {
-        std::cout << "  Name       Level   Mode      Time      Score\n";
+        std::cout << "  " << padTo("Name", NAME_W) << "  "
+                  << padTo("Level", LEVEL_W) << "  "
+                  << padTo("Mode", MODE_W) << "  "
+                  << padTo("Time", TIME_W) << "  "
+                  << padTo("Score", SCORE_W) << "\n";
         for (size_t i = 0; i < cleared.size() && i < 10; i++) {
             const RankEntry& e = cleared[i];
             long long t = e.timeMs;
@@ -96,8 +135,11 @@ void RankBoard::display() const {
             int secs = (int)((t % 60000) / 1000);
             char buf[32];
             sprintf_s(buf, "%02d:%02d", mins, secs);
-            std::cout << "  " << e.name;
-            std::cout << "   " << e.level << "  " << e.mode << "  " << buf << "    " << e.score << "\n";
+            std::cout << "  " << padTo(e.name, NAME_W) << "  "
+                      << std::setw(LEVEL_W) << std::left << e.level << "  "
+                      << std::setw(MODE_W) << std::left << e.mode << "  "
+                      << buf << "  "
+                      << std::setw(SCORE_W) << std::right << e.score << "\n";
         }
     }
 
@@ -105,7 +147,11 @@ void RankBoard::display() const {
     if (failed.empty()) {
         std::cout << "No records.\n";
     } else {
-        std::cout << "  Name       Level   Mode      Time      Score\n";
+        std::cout << "  " << padTo("Name", NAME_W) << "  "
+                  << padTo("Level", LEVEL_W) << "  "
+                  << padTo("Mode", MODE_W) << "  "
+                  << padTo("Time", TIME_W) << "  "
+                  << padTo("Score", SCORE_W) << "\n";
         for (size_t i = 0; i < failed.size() && i < 10; i++) {
             const RankEntry& e = failed[i];
             long long t = e.timeMs;
@@ -113,8 +159,11 @@ void RankBoard::display() const {
             int secs = (int)((t % 60000) / 1000);
             char buf[32];
             sprintf_s(buf, "%02d:%02d", mins, secs);
-            std::cout << "  " << e.name;
-            std::cout << "   " << e.level << "  " << e.mode << "  " << buf << "    " << e.score << "\n";
+            std::cout << "  " << padTo(e.name, NAME_W) << "  "
+                      << std::setw(LEVEL_W) << std::left << e.level << "  "
+                      << std::setw(MODE_W) << std::left << e.mode << "  "
+                      << buf << "  "
+                      << std::setw(SCORE_W) << std::right << e.score << "\n";
         }
     }
     std::cout << "===============================\n";
