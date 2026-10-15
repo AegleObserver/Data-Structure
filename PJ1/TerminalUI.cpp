@@ -131,6 +131,12 @@ void TerminalUI::displayGameState(const GameModule& game, const std::string& tim
     std::cout << "  Score: ";
     setColor(10, 0);
     std::cout << game.getScore();
+    if (game.getScoreTarget() > 0) {
+        setColor(14, 0);
+        std::cout << " / Target: ";
+        setColor(10, 0);
+        std::cout << game.getScoreTarget();
+    }
     setColor(14, 0);
     std::cout << "   Turn: ";
     setColor(10, 0);
@@ -197,7 +203,7 @@ void TerminalUI::displayTutorialIntro() {
     std::cout << "   1. Insert a ball by typing a position number\n";
     std::cout << "   2. The FEED ball joins the track after each turn\n";
     std::cout << "   3. Discard a useless ball by typing 'd'\n";
-    std::cout << "   4. Clear the whole track to win\n";
+    std::cout << "   4. Reach the target score to win\n";
     std::cout << "  ==========================================\n";
     resetColor();
 }

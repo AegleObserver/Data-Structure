@@ -4,7 +4,7 @@
 #include <fstream>
 #include <algorithm>
 
-GameModule::GameModule() : ammoIndex(0), maxSize(10), score(0), turnCount(0),
+GameModule::GameModule() : ammoIndex(0), maxSize(10), score(0), scoreTarget(0), turnCount(0),
     currentBall(' '), nextBall(' '), endlessMode(false) {
     std::srand((unsigned)std::time(0));
 }
@@ -12,12 +12,14 @@ GameModule::GameModule() : ammoIndex(0), maxSize(10), score(0), turnCount(0),
 GameModule::~GameModule() {}
 
 void GameModule::initialize(const std::string& active, const std::string& feed,
-                             const std::string& ammo, int maxSize, bool endless) {
+                             const std::string& ammo, int maxSize, bool endless,
+                             int scoreTarget) {
     if (ammo.size() < 2) return;
     balls = active;
     marks.assign(active.size(), 0);
     this->maxSize = maxSize;
     score = 0;
+    this->scoreTarget = scoreTarget;
     turnCount = 0;
     endlessMode = endless;
     feedQueue.assign(feed.begin(), feed.end());
@@ -74,9 +76,14 @@ void GameModule::advanceAmmo() {
 
 void GameModule::incrementTurnCount() { turnCount++; }
 
-bool GameModule::isGameOver() const { return (int)balls.size() > maxSize; }
+bool GameModule::isGameOver() const {
+    if ((int)balls.size() > maxSize) return true;
+    if (scoreTarget > 0 && balls.empty() && feedQueue.empty() && score < scoreTarget) return true;
+    return false;
+}
 
 bool GameModule::isWin() const {
+    if (scoreTarget > 0) return score >= scoreTarget;
     return balls.empty() && feedQueue.empty() && !endlessMode;
 }
 
@@ -84,6 +91,7 @@ std::string GameModule::getBalls() const { return balls; }
 const std::vector<char>& GameModule::getMarks() const { return marks; }
 int GameModule::getSize() const { return (int)balls.size(); }
 int GameModule::getScore() const { return score; }
+int GameModule::getScoreTarget() const { return scoreTarget; }
 int GameModule::getWaitingCount() const { return (int)feedQueue.size(); }
 int GameModule::getTurnCount() const { return turnCount; }
 int GameModule::getMaxSize() const { return maxSize; }
@@ -105,6 +113,7 @@ bool GameModule::save(const std::string& filename) const {
     file << "AMMO=" << ammo << "\n";
     file << "AMMO_INDEX=" << ammoIndex << "\n";
     file << "MAX_LENGTH=" << maxSize << "\n";
+    file << "SCORE_TARGET=" << scoreTarget << "\n";
     file << "SCORE=" << score << "\n";
     file << "TURN=" << turnCount << "\n";
     file << "CURRENT=" << currentBall << "\n";
@@ -132,6 +141,7 @@ bool GameModule::load(const std::string& filename) {
         else if (key == "AMMO") ammo = value;
         else if (key == "AMMO_INDEX") ammoIndex = std::stoi(value);
         else if (key == "MAX_LENGTH") maxSize = std::stoi(value);
+        else if (key == "SCORE_TARGET") scoreTarget = std::stoi(value);
         else if (key == "SCORE") score = std::stoi(value);
         else if (key == "TURN") turnCount = std::stoi(value);
         else if (key == "CURRENT") currentBall = value.empty() ? ' ' : value[0];
@@ -151,6 +161,7 @@ GameModule::Snapshot GameModule::getSnapshot() const {
     s.ammoIndex = ammoIndex;
     s.maxSize = maxSize;
     s.score = score;
+    s.scoreTarget = scoreTarget;
     s.turnCount = turnCount;
     s.currentBall = currentBall;
     s.nextBall = nextBall;
@@ -166,6 +177,7 @@ void GameModule::applySnapshot(const Snapshot& snap) {
     ammoIndex = snap.ammoIndex;
     maxSize = snap.maxSize;
     score = snap.score;
+    scoreTarget = snap.scoreTarget;
     turnCount = snap.turnCount;
     currentBall = snap.currentBall;
     nextBall = snap.nextBall;

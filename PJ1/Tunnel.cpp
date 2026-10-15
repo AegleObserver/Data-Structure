@@ -42,7 +42,7 @@ static const TutorialStep TUTORIAL_STEPS[] = {
     {"2", 2, "STEP 1/4: Type 2 to place the R at the arrow. Three same-color balls in a row are cleared!"},
     {"2", 2, "STEP 2/4: A waiting ball joins the track tail each turn (the G). Type 2 to clear the three B's!"},
     {"d", -1, "STEP 3/4: A useless ball can be discarded: type d. Try it!"},
-    {"2", 2, "STEP 4/4: Clear the whole track to WIN. Type 2 to finish the last two G's!"},
+    {"2", 2, "STEP 4/4: Reach the target score to WIN. Type 2 to finish the last two G's!"},
 };
 const int TUTORIAL_STEP_COUNT = sizeof(TUTORIAL_STEPS) / sizeof(TUTORIAL_STEPS[0]);
 
@@ -215,8 +215,9 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
         }
         bool endless = (mode == GameMode::ENDLESS || mode == GameMode::SURVIVAL);
         int maxSize = data.maxSize;
-        if (mode == GameMode::SURVIVAL) maxSize = SURVIVAL_MAX_SIZE;
-        game.initialize(data.active, data.feed, data.ammo, maxSize, endless);
+        int target = (mode == GameMode::NORMAL || mode == GameMode::CHAMELEON)
+                     ? data.scoreTarget : 0;
+        game.initialize(data.active, data.feed, data.ammo, maxSize, endless, target);
         currentTutorial = data.tutorial;
     }
 
@@ -251,7 +252,12 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
         TerminalUI::displayWin(game.getScore(), game.getTurnCount(), formatTime(elapsed));
         playSound("win");
     } else if (game.isGameOver()) {
-        TerminalUI::displayLose(game.getScore(), game.getTurnCount(), formatTime(elapsed), "Track exceeded max length!");
+        std::string reason = "Track exceeded max length!";
+        if (game.getScoreTarget() > 0 && game.getSize() == 0
+            && game.getScore() < game.getScoreTarget()) {
+            reason = "Target score not reached!";
+        }
+        TerminalUI::displayLose(game.getScore(), game.getTurnCount(), formatTime(elapsed), reason);
         playSound("lose");
     } else if (timeExpired()) {
         TerminalUI::displayLose(game.getScore(), game.getTurnCount(), formatTime(elapsed), "Time's up!");

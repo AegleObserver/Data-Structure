@@ -14,7 +14,8 @@ public:
     ~GameModule();
 
     void initialize(const std::string& active, const std::string& feed,
-                    const std::string& ammo, int maxSize, bool endless = false);
+                    const std::string& ammo, int maxSize, bool endless = false,
+                    int scoreTarget = 0);
 
     bool insertBall(char ball, int index, ElimCallback cb = nullptr);
     void discardBall();
@@ -30,6 +31,7 @@ public:
     const std::vector<char>& getMarks() const;
     int getSize() const;
     int getScore() const;
+    int getScoreTarget() const;
     int getWaitingCount() const;
     int getTurnCount() const;
     int getMaxSize() const;
@@ -49,6 +51,7 @@ public:
         int ammoIndex;
         int maxSize;
         int score;
+        int scoreTarget;
         int turnCount;
         char currentBall;
         char nextBall;
@@ -70,6 +73,7 @@ private:
     char currentBall;
     char nextBall;
     bool endlessMode;
+    int scoreTarget;
     std::vector<char> marks;
 
     void resolve(int index, ElimCallback cb = nullptr);
