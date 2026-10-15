@@ -253,12 +253,7 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
         TerminalUI::displayWin(game.getScore(), game.getTurnCount(), formatTime(elapsed));
         playSound("win");
     } else if (game.isGameOver()) {
-        std::string reason = "Track exceeded max length!";
-        if (game.getScoreTarget() > 0 && game.getSize() == 0
-            && game.getScore() < game.getScoreTarget()) {
-            reason = "Target score not reached!";
-        }
-        TerminalUI::displayLose(game.getScore(), game.getTurnCount(), formatTime(elapsed), reason);
+        TerminalUI::displayLose(game.getScore(), game.getTurnCount(), formatTime(elapsed), "Track exceeded max length!");
         playSound("lose");
     } else if (timeExpired()) {
         TerminalUI::displayLose(game.getScore(), game.getTurnCount(), formatTime(elapsed), "Time's up!");
@@ -465,10 +460,17 @@ void Tunnel::recordResult(const std::string& filename, GameMode mode, bool win) 
     else if (mode == GameMode::COLLECTION) modeName = "Collection";
 
     std::string name;
-    std::cout << "  Enter your name for the rankboard: ";
-    std::cin.ignore(10000, '\n');
-    std::getline(std::cin, name);
-    if (name.empty()) name = "Player";
+    while (true) {
+        std::cout << "  Enter your name for the rankboard: ";
+        std::cin.ignore(10000, '\n');
+        if (!std::getline(std::cin, name)) { name = "Player"; break; }
+        bool ok = !name.empty();
+        for (size_t i = 0; i < name.size(); i++) {
+            if (!isalnum((unsigned char)name[i])) { ok = false; break; }
+        }
+        if (ok) break;
+        std::cout << "  Name must be letters/digits only. Try again.\n";
+    }
 
     SYSTEMTIME st;
     GetLocalTime(&st);

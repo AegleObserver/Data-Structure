@@ -80,11 +80,7 @@ void GameModule::advanceAmmo() {
 
 void GameModule::incrementTurnCount() { turnCount++; }
 
-bool GameModule::isGameOver() const {
-    if ((int)balls.size() > maxSize) return true;
-    if (scoreTarget > 0 && balls.empty() && feedQueue.empty() && score < scoreTarget) return true;
-    return false;
-}
+bool GameModule::isGameOver() const { return (int)balls.size() > maxSize; }
 
 bool GameModule::isWin() const {
     if (scoreTarget > 0) return score >= scoreTarget;
