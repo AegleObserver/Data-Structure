@@ -9,10 +9,7 @@
 const std::string SAVE_FILE = "saves/save.txt";
 const std::string RANK_FILE = "saves/rank.txt";
 
-const long long TIMED_LIMIT_MS = 120000;
 const long long SURVIVAL_DEFAULT_MS = 60000;
-const long long SURVIVAL_REWARD_PER_BALL_MS = 500;
-const int SURVIVAL_MAX_SIZE = 50;
 
 struct LevelInfo {
     std::string label;
@@ -48,7 +45,7 @@ const int TUTORIAL_STEP_COUNT = sizeof(TUTORIAL_STEPS) / sizeof(TUTORIAL_STEPS[0
 
 Tunnel::Tunnel() : running(true), totalPausedMs(0), isPaused(false),
     currentMode(GameMode::NORMAL), survivalStartMs(SURVIVAL_DEFAULT_MS),
-    survivalRewardMs(0), soundEnabled(false),
+    soundEnabled(false),
     currentTutorial(false), tutorialStep(0) {
     rankBoard.setFilename(RANK_FILE);
     rankBoard.load();
@@ -63,17 +60,15 @@ long long Tunnel::currentElapsedMs() const {
 }
 
 long long Tunnel::survivalRemainingMs() const {
-    return survivalStartMs + survivalRewardMs - currentElapsedMs();
+    return survivalStartMs - currentElapsedMs();
 }
 
 long long Tunnel::timeRemainingMs() const {
-    if (currentMode == GameMode::TIMED) return TIMED_LIMIT_MS - currentElapsedMs();
     if (currentMode == GameMode::SURVIVAL) return survivalRemainingMs();
     return INT64_MAX;
 }
 
 bool Tunnel::timeExpired() const {
-    if (currentMode == GameMode::TIMED) return timeRemainingMs() <= 0;
     if (currentMode == GameMode::SURVIVAL) return timeRemainingMs() <= 0;
     return false;
 }
@@ -87,22 +82,12 @@ std::string Tunnel::formatTime(long long ms) const {
 }
 
 std::string Tunnel::timeLabel() const {
-    if (currentMode == GameMode::TIMED || currentMode == GameMode::SURVIVAL) {
+    if (currentMode == GameMode::SURVIVAL) {
         long long rem = timeRemainingMs();
         if (rem < 0) rem = 0;
-        std::string extra = "";
-        if (currentMode == GameMode::SURVIVAL) {
-            char buf[32];
-            sprintf_s(buf, " (+%llds)", survivalRewardMs / 1000);
-            extra = buf;
-        }
-        return formatTime(rem) + " left" + extra;
+        return formatTime(rem) + " left";
     }
     return formatTime(currentElapsedMs());
-}
-
-void Tunnel::addSurvivalReward(int len, int chainLevel) {
-    survivalRewardMs += (long long)len * chainLevel * SURVIVAL_REWARD_PER_BALL_MS;
 }
 
 void Tunnel::playSound(const std::string& type) {
@@ -148,7 +133,7 @@ int Tunnel::selectMode() {
     while (true) {
         TerminalUI::displayModeMenu();
         int choice = TerminalUI::getModeChoice();
-        if (choice >= 1 && choice <= 5) return choice;
+        if (choice >= 1 && choice <= 4) return choice;
         if (choice == 0) return 0;
         TerminalUI::displayInvalidInput();
     }
@@ -176,9 +161,8 @@ void Tunnel::run() {
 
             GameMode gm = GameMode::NORMAL;
             if (mode == 2) gm = GameMode::ENDLESS;
-            else if (mode == 3) gm = GameMode::TIMED;
-            else if (mode == 4) gm = GameMode::SURVIVAL;
-            else if (mode == 5) gm = GameMode::CHAMELEON;
+            else if (mode == 3) gm = GameMode::SURVIVAL;
+            else if (mode == 4) gm = GameMode::CHAMELEON;
             playLevel(lv.file, gm);
         } else if (choice == 10) {
             showSettings();
@@ -195,7 +179,6 @@ void Tunnel::run() {
 void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave) {
     currentMode = mode;
     currentFilename = filename;
-    survivalRewardMs = 0;
     currentTutorial = false;
     tutorialStep = 0;
 
@@ -228,7 +211,6 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
     std::cout << "\n  Game started!";
     const char* modeName = "Normal";
     if (currentMode == GameMode::ENDLESS) modeName = "Endless";
-    else if (currentMode == GameMode::TIMED) modeName = "Timed (2:00)";
     else if (currentMode == GameMode::SURVIVAL) modeName = "Survival";
     else if (currentMode == GameMode::CHAMELEON) modeName = "Chameleon";
     std::cout << " [" << modeName << "]\n";
@@ -285,7 +267,7 @@ bool Tunnel::playTurn() {
 
     bool timedOut = false;
     std::string input;
-    if (currentMode == GameMode::TIMED || currentMode == GameMode::SURVIVAL) {
+    if (currentMode == GameMode::SURVIVAL) {
         input = TerminalUI::getCommandDeadline([&]() { return timeRemainingMs(); }, timedOut);
     } else {
         input = TerminalUI::getCommand();
@@ -366,9 +348,6 @@ bool Tunnel::playTurn() {
     auto anim = [&](const std::string& state, const std::string& action, int start, int len, int chain) {
         TerminalUI::displayAnimation(state, action, start, len, chain,
                                      game.getScore(), game.getTurnCount(), timeLabel());
-        if (currentMode == GameMode::SURVIVAL && len > 0) {
-            addSurvivalReward(len, chain);
-        }
         if (action == "insert") playSound("insert");
         else if (action == "eliminate") playSound("eliminate");
         else if (action == "chain") playSound("chain");
@@ -462,7 +441,6 @@ void Tunnel::recordResult(const std::string& filename, GameMode mode, bool win) 
 
     std::string modeName = "Normal";
     if (mode == GameMode::ENDLESS) modeName = "Endless";
-    else if (mode == GameMode::TIMED) modeName = "Timed";
     else if (mode == GameMode::SURVIVAL) modeName = "Survival";
     else if (mode == GameMode::CHAMELEON) modeName = "Chameleon";
 

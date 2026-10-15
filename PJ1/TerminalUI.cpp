@@ -243,9 +243,8 @@ void TerminalUI::displayModeMenu() {
     resetColor();
     std::cout << "  1. Normal\n";
     std::cout << "  2. Endless\n";
-    std::cout << "  3. Timed (2:00)\n";
-    std::cout << "  4. Survival\n";
-    std::cout << "  5. Chameleon\n";
+    std::cout << "  3. Survival\n";
+    std::cout << "  4. Chameleon\n";
     std::cout << "  0. Back\n";
     std::cout << "  Choose: ";
 }

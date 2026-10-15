@@ -5,7 +5,7 @@
 #include "RankBoard.h"
 #include <chrono>
 
-enum class GameMode { NORMAL, ENDLESS, TIMED, SURVIVAL, CHAMELEON };
+enum class GameMode { NORMAL, ENDLESS, SURVIVAL, CHAMELEON };
 
 class Tunnel {
 public:
@@ -23,7 +23,6 @@ private:
     bool isPaused;
     GameMode currentMode;
     long long survivalStartMs;
-    long long survivalRewardMs;
     bool soundEnabled;
     bool currentTutorial;
     int tutorialStep;
@@ -36,7 +35,6 @@ private:
     bool timeExpired() const;
     std::string formatTime(long long ms) const;
     std::string timeLabel() const;
-    void addSurvivalReward(int len, int chainLevel);
     void playSound(const std::string& type);
 
     int selectLevel();
