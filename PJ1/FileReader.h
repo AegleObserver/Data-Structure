@@ -8,6 +8,7 @@ struct LevelData {
     std::string feed;
     std::string ammo;
     int maxSize;
+    int scoreTarget = 0;
     bool tutorial = false;
 };
 
