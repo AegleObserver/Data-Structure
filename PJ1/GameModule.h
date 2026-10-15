@@ -24,6 +24,12 @@ public:
     void advanceAmmo();
     void incrementTurnCount();
 
+    void setCollectGoal(char color, int target);
+    int getCollected(char c) const;
+    int getCollectTarget() const;
+    char getCollectColor() const;
+    static int colorIndex(char c);
+
     bool isGameOver() const;
     bool isWin() const;
 
@@ -56,6 +62,9 @@ public:
         char currentBall;
         char nextBall;
         bool endlessMode;
+        int collected[5];
+        char collectColor;
+        int collectTarget;
         std::vector<char> marks;
     };
 
@@ -74,6 +83,9 @@ private:
     char currentBall;
     char nextBall;
     bool endlessMode;
+    int collected[5];
+    char collectColor;
+    int collectTarget;
     std::vector<char> marks;
 
     void resolve(int index, ElimCallback cb = nullptr);

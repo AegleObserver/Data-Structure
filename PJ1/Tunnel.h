@@ -5,7 +5,7 @@
 #include "RankBoard.h"
 #include <chrono>
 
-enum class GameMode { NORMAL, ENDLESS, SURVIVAL, CHAMELEON };
+enum class GameMode { NORMAL, ENDLESS, SURVIVAL, CHAMELEON, COLLECTION };
 
 class Tunnel {
 public:

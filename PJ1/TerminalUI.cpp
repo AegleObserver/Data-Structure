@@ -136,6 +136,12 @@ void TerminalUI::displayGameState(const GameModule& game, const std::string& tim
         std::cout << " / Target: ";
         setColor(10, 0);
         std::cout << game.getScoreTarget();
+    } else if (game.getCollectTarget() > 0) {
+        setColor(14, 0);
+        std::cout << " / Collect: ";
+        setColor(10, 0);
+        std::cout << game.getCollectColor() << " " << game.getCollected(game.getCollectColor())
+                  << "/" << game.getCollectTarget();
     }
     setColor(14, 0);
     std::cout << "   Turn: ";
@@ -245,6 +251,7 @@ void TerminalUI::displayModeMenu() {
     std::cout << "  2. Endless\n";
     std::cout << "  3. Survival\n";
     std::cout << "  4. Chameleon\n";
+    std::cout << "  5. Collection\n";
     std::cout << "  0. Back\n";
     std::cout << "  Choose: ";
 }

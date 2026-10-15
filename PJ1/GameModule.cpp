@@ -5,7 +5,8 @@
 #include <algorithm>
 
 GameModule::GameModule() : ammoIndex(0), maxSize(10), score(0), scoreTarget(0), turnCount(0),
-    currentBall(' '), nextBall(' '), endlessMode(false) {
+    currentBall(' '), nextBall(' '), endlessMode(false), collectColor(0), collectTarget(0) {
+    for (int i = 0; i < 5; i++) collected[i] = 0;
     std::srand((unsigned)std::time(0));
 }
 
@@ -20,6 +21,9 @@ void GameModule::initialize(const std::string& active, const std::string& feed,
     this->maxSize = maxSize;
     score = 0;
     this->scoreTarget = scoreTarget;
+    this->collectColor = 0;
+    this->collectTarget = 0;
+    for (int i = 0; i < 5; i++) collected[i] = 0;
     turnCount = 0;
     endlessMode = endless;
     feedQueue.assign(feed.begin(), feed.end());
@@ -84,7 +88,35 @@ bool GameModule::isGameOver() const {
 
 bool GameModule::isWin() const {
     if (scoreTarget > 0) return score >= scoreTarget;
+    if (collectTarget > 0 && collectColor != 0) {
+        int ci = colorIndex(collectColor);
+        if (ci >= 0 && collected[ci] >= collectTarget) return true;
+    }
     return balls.empty() && feedQueue.empty() && !endlessMode;
+}
+
+void GameModule::setCollectGoal(char color, int target) {
+    collectColor = color;
+    collectTarget = target;
+}
+
+int GameModule::getCollected(char c) const {
+    int ci = colorIndex(c);
+    return ci >= 0 ? collected[ci] : 0;
+}
+
+int GameModule::getCollectTarget() const { return collectTarget; }
+char GameModule::getCollectColor() const { return collectColor; }
+
+int GameModule::colorIndex(char c) {
+    switch (c) {
+        case 'R': return 0;
+        case 'G': return 1;
+        case 'B': return 2;
+        case 'Y': return 3;
+        case 'P': return 4;
+    }
+    return -1;
 }
 
 std::string GameModule::getBalls() const { return balls; }
@@ -114,6 +146,9 @@ bool GameModule::save(const std::string& filename) const {
     file << "AMMO_INDEX=" << ammoIndex << "\n";
     file << "MAX_LENGTH=" << maxSize << "\n";
     file << "SCORE_TARGET=" << scoreTarget << "\n";
+    file << "COLLECTED=" << collected[0] << "," << collected[1] << "," << collected[2] << ","
+         << collected[3] << "," << collected[4] << "\n";
+    file << "COLLECT=" << (collectColor ? collectColor : '-') << "=" << collectTarget << "\n";
     file << "SCORE=" << score << "\n";
     file << "TURN=" << turnCount << "\n";
     file << "CURRENT=" << currentBall << "\n";
@@ -142,6 +177,27 @@ bool GameModule::load(const std::string& filename) {
         else if (key == "AMMO_INDEX") ammoIndex = std::stoi(value);
         else if (key == "MAX_LENGTH") maxSize = std::stoi(value);
         else if (key == "SCORE_TARGET") scoreTarget = std::stoi(value);
+        else if (key == "COLLECTED") {
+            int idx = 0;
+            std::string cur;
+            for (size_t i = 0; i < value.size(); i++) {
+                if (value[i] == ',') {
+                    if (idx < 5) collected[idx++] = std::stoi(cur);
+                    cur.clear();
+                } else {
+                    cur += value[i];
+                }
+            }
+            if (idx < 5 && !cur.empty()) collected[idx++] = std::stoi(cur);
+        }
+        else if (key == "COLLECT") {
+            size_t eq = value.find('=');
+            if (eq != std::string::npos) {
+                collectColor = value[0];
+                if (collectColor == '-') collectColor = 0;
+                collectTarget = std::stoi(value.substr(eq + 1));
+            }
+        }
         else if (key == "SCORE") score = std::stoi(value);
         else if (key == "TURN") turnCount = std::stoi(value);
         else if (key == "CURRENT") currentBall = value.empty() ? ' ' : value[0];
@@ -166,6 +222,9 @@ GameModule::Snapshot GameModule::getSnapshot() const {
     s.currentBall = currentBall;
     s.nextBall = nextBall;
     s.endlessMode = endlessMode;
+    for (int i = 0; i < 5; i++) s.collected[i] = collected[i];
+    s.collectColor = collectColor;
+    s.collectTarget = collectTarget;
     s.marks = marks;
     return s;
 }
@@ -182,6 +241,9 @@ void GameModule::applySnapshot(const Snapshot& snap) {
     currentBall = snap.currentBall;
     nextBall = snap.nextBall;
     endlessMode = snap.endlessMode;
+    for (int i = 0; i < 5; i++) collected[i] = snap.collected[i];
+    collectColor = snap.collectColor;
+    collectTarget = snap.collectTarget;
     marks = snap.marks;
 }
 
@@ -199,6 +261,8 @@ void GameModule::resolve(int index, ElimCallback cb) {
         if (cb) cb(balls, action, l, len, chainLevel);
         balls.erase(l, len);
         marks.erase(marks.begin() + l, marks.begin() + l + len);
+        int ci = colorIndex(c);
+        if (ci >= 0) collected[ci] += len;
         score += countScore(len, chainLevel);
         chainLevel++;
         if (l == 0 || l >= (int)balls.size()) break;

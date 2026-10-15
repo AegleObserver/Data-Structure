@@ -133,7 +133,7 @@ int Tunnel::selectMode() {
     while (true) {
         TerminalUI::displayModeMenu();
         int choice = TerminalUI::getModeChoice();
-        if (choice >= 1 && choice <= 4) return choice;
+        if (choice >= 1 && choice <= 5) return choice;
         if (choice == 0) return 0;
         TerminalUI::displayInvalidInput();
     }
@@ -163,6 +163,7 @@ void Tunnel::run() {
             if (mode == 2) gm = GameMode::ENDLESS;
             else if (mode == 3) gm = GameMode::SURVIVAL;
             else if (mode == 4) gm = GameMode::CHAMELEON;
+            else if (mode == 5) gm = GameMode::COLLECTION;
             playLevel(lv.file, gm);
         } else if (choice == 10) {
             showSettings();
@@ -201,6 +202,23 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
         int target = (mode == GameMode::NORMAL || mode == GameMode::CHAMELEON)
                      ? data.scoreTarget : 0;
         game.initialize(data.active, data.feed, data.ammo, maxSize, endless, target);
+        if (mode == GameMode::COLLECTION) {
+            int counts[5] = {0, 0, 0, 0, 0};
+            for (size_t i = 0; i < data.active.size(); i++) {
+                int ci = GameModule::colorIndex(data.active[i]);
+                if (ci >= 0) counts[ci]++;
+            }
+            for (size_t i = 0; i < data.feed.size(); i++) {
+                int ci = GameModule::colorIndex(data.feed[i]);
+                if (ci >= 0) counts[ci]++;
+            }
+            int best = 0;
+            for (int i = 1; i < 5; i++) if (counts[i] > counts[best]) best = i;
+            char collectColor = "RGBYP"[best];
+            int collectTarget = counts[best] < 10 ? counts[best] : 10;
+            if (collectTarget <= 0) collectTarget = 1;
+            game.setCollectGoal(collectColor, collectTarget);
+        }
         currentTutorial = data.tutorial;
     }
 
@@ -213,6 +231,7 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
     if (currentMode == GameMode::ENDLESS) modeName = "Endless";
     else if (currentMode == GameMode::SURVIVAL) modeName = "Survival";
     else if (currentMode == GameMode::CHAMELEON) modeName = "Chameleon";
+    else if (currentMode == GameMode::COLLECTION) modeName = "Collection";
     std::cout << " [" << modeName << "]\n";
     std::cout << "  Initial track: " << game.getBalls() << "\n";
     std::cout << "  Max length: " << game.getMaxSize() << "\n";
@@ -443,6 +462,7 @@ void Tunnel::recordResult(const std::string& filename, GameMode mode, bool win) 
     if (mode == GameMode::ENDLESS) modeName = "Endless";
     else if (mode == GameMode::SURVIVAL) modeName = "Survival";
     else if (mode == GameMode::CHAMELEON) modeName = "Chameleon";
+    else if (mode == GameMode::COLLECTION) modeName = "Collection";
 
     std::string name;
     std::cout << "  Enter your name for the rankboard: ";
