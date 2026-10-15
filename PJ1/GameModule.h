@@ -69,11 +69,11 @@ private:
     int ammoIndex;
     int maxSize;
     int score;
+    int scoreTarget;
     int turnCount;
     char currentBall;
     char nextBall;
     bool endlessMode;
-    int scoreTarget;
     std::vector<char> marks;
 
     void resolve(int index, ElimCallback cb = nullptr);
