@@ -139,7 +139,8 @@ M. Settings     → 设置（生存限时 / 音效开关）
 
 ```
 1. Continue        继续游戏
-2. Quit to Main Menu  回主菜单
+2. Save Game       存档（写入 saves/save.txt）
+3. Quit to Main Menu  回主菜单
 ```
 
 ### 设置菜单
@@ -152,10 +153,9 @@ M. Settings     → 设置（生存限时 / 音效开关）
 
 ## 存档与排行榜
 
-- 游玩中按 `s` 或暂停前存档，写入 `saves/save.txt`
+- 游玩中按 `s`，或暂停菜单选 `2. Save Game` 存档，写入 `saves/save.txt`
 - 主菜单选 `2. Load Save` 读取存档
-- 游戏结束后输入名字，记录写入 `saves/rank.txt`
-- 排行榜用户名仅允许英文与数字（输入时校验，非法需重试）
+- 游戏结束后输入名字，记录写入 `saves/rank.txt`；用户名仅允许英文与数字，重叠时提示 occupied
 - 排行榜：通关按用时升序，未通关按分数降序，各显示前 10 名
 
 ## 关卡文件
