@@ -27,6 +27,7 @@ private:
     bool currentTutorial;
     int tutorialStep;
     std::string currentFilename;
+    std::string currentSaveFile;
     std::vector<GameModule::Snapshot> history;
 
     long long currentElapsedMs() const;
@@ -42,6 +43,7 @@ private:
     void playLevel(const std::string& filename, GameMode mode, bool loadSave = false);
     bool playTurn();
     void finishTurn();
+    bool saveToSlot();
     bool handlePause();
     void showRankBoard();
     void showSettings();

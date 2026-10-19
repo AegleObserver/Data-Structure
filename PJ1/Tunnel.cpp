@@ -6,10 +6,10 @@
 #include <cstdint>
 #include <windows.h>
 
-const std::string SAVE_FILE = "saves/save.txt";
 const std::string RANK_FILE = "saves/rank.txt";
 
 const long long SURVIVAL_DEFAULT_MS = 60000;
+const int SAVE_SLOTS = 3;
 
 struct LevelInfo {
     std::string label;
@@ -46,7 +46,7 @@ const int TUTORIAL_STEP_COUNT = sizeof(TUTORIAL_STEPS) / sizeof(TUTORIAL_STEPS[0
 Tunnel::Tunnel() : running(true), totalPausedMs(0), isPaused(false),
     currentMode(GameMode::NORMAL), survivalStartMs(SURVIVAL_DEFAULT_MS),
     soundEnabled(false),
-    currentTutorial(false), tutorialStep(0) {
+    currentTutorial(false), tutorialStep(0), currentSaveFile("saves/save1.txt") {
     rankBoard.setFilename(RANK_FILE);
     rankBoard.load();
 }
@@ -168,6 +168,15 @@ void Tunnel::run() {
         } else if (choice == 10) {
             showSettings();
         } else if (choice == 2) {
+            std::cout << "  Load slot (1-" << SAVE_SLOTS << "): ";
+            int slot;
+            if (!(std::cin >> slot) || slot < 1 || slot > SAVE_SLOTS) {
+                std::cin.clear();
+                std::cin.ignore(10000, '\n');
+                TerminalUI::displayInvalidInput();
+                continue;
+            }
+            currentSaveFile = "saves/save" + std::to_string(slot) + ".txt";
             playLevel("", GameMode::NORMAL, true);
         } else if (choice == 3) {
             showRankBoard();
@@ -184,7 +193,7 @@ void Tunnel::playLevel(const std::string& filename, GameMode mode, bool loadSave
     tutorialStep = 0;
 
     if (loadSave) {
-        if (!game.load(SAVE_FILE)) {
+        if (!game.load(currentSaveFile)) {
             std::cout << "  No save file found.\n";
             TerminalUI::pauseScreen();
             return;
@@ -320,9 +329,7 @@ bool Tunnel::playTurn() {
         char c = (char)tolower((unsigned char)input[0]);
 
         if (c == 's') {
-            if (game.save(SAVE_FILE)) std::cout << "  Game saved!\n";
-            else std::cerr << "  Failed to save.\n";
-            Sleep(700);
+            saveToSlot();
             return true;
         }
         if (c == 'r') {
@@ -388,6 +395,26 @@ void Tunnel::finishTurn() {
     if (currentTutorial && tutorialStep < TUTORIAL_STEP_COUNT) tutorialStep++;
 }
 
+bool Tunnel::saveToSlot() {
+    std::cout << "  Save to slot (1-" << SAVE_SLOTS << "): ";
+    int slot;
+    if (!(std::cin >> slot) || slot < 1 || slot > SAVE_SLOTS) {
+        std::cin.clear();
+        std::cin.ignore(10000, '\n');
+        TerminalUI::displayInvalidInput();
+        return false;
+    }
+    std::string file = "saves/save" + std::to_string(slot) + ".txt";
+    if (game.save(file)) {
+        std::cout << "  Game saved to slot " << slot << "!\n";
+        currentSaveFile = file;
+    } else {
+        std::cerr << "  Failed to save.\n";
+    }
+    Sleep(700);
+    return true;
+}
+
 bool Tunnel::handlePause() {
     pauseStart = std::chrono::steady_clock::now();
     isPaused = true;
@@ -402,9 +429,7 @@ bool Tunnel::handlePause() {
             isPaused = false;
             return true;
         } else if (choice == 2) {
-            if (game.save(SAVE_FILE)) std::cout << "  Game saved!\n";
-            else std::cerr << "  Failed to save.\n";
-            Sleep(700);
+            saveToSlot();
         } else if (choice == 3) {
             isPaused = false;
             return false;

@@ -95,7 +95,7 @@ zuma.exe
 
 ```
 1. Start Game   → 选关卡 → 选模式 → 开始游戏
-2. Load Save    → 读取上次存档继续
+2. Load Save    → 选槽位读取存档
 3. Rankboard    → 查看排行榜
 M. Settings     → 设置（生存限时 / 音效开关）
 0. Quit         → 退出
@@ -139,7 +139,7 @@ M. Settings     → 设置（生存限时 / 音效开关）
 
 ```
 1. Continue        继续游戏
-2. Save Game       存档（写入 saves/save.txt）
+2. Save Game       选槽位存档（saves/save1~3.txt）
 3. Quit to Main Menu  回主菜单
 ```
 
@@ -153,8 +153,9 @@ M. Settings     → 设置（生存限时 / 音效开关）
 
 ## 存档与排行榜
 
-- 游玩中按 `s`，或暂停菜单选 `2. Save Game` 存档，写入 `saves/save.txt`
-- 主菜单选 `2. Load Save` 读取存档
+- 共 3 个存档槽位（`saves/save1.txt` ~ `save3.txt`）
+- 游玩中按 `s`，或暂停菜单选 `2. Save Game`，提示选择槽位后存档
+- 主菜单选 `2. Load Save`，提示选择槽位后读取；空槽位提示 No save file
 - 游戏结束后输入名字，记录写入 `saves/rank.txt`；用户名仅允许英文与数字，重叠时提示 occupied
 - 排行榜：通关按用时升序，未通关按分数降序，各显示前 10 名
 
