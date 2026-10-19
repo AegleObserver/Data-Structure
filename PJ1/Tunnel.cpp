@@ -322,10 +322,12 @@ bool Tunnel::playTurn() {
         if (c == 's') {
             if (game.save(SAVE_FILE)) std::cout << "  Game saved!\n";
             else std::cerr << "  Failed to save.\n";
+            Sleep(700);
             return true;
         }
         if (c == 'r') {
             std::cout << "  Restarting...\n";
+            Sleep(700);
             history.clear();
             playLevel(currentFilename, currentMode);
             return false;
@@ -333,11 +335,13 @@ bool Tunnel::playTurn() {
         if (c == 'u') {
             if (history.size() <= 1) {
                 std::cout << "  Nothing to undo.\n";
+                Sleep(700);
                 return true;
             }
             history.pop_back();
             game.applySnapshot(history.back());
             std::cout << "  Undone.\n";
+            Sleep(700);
             return true;
         }
         if (c == 'p') {
@@ -398,6 +402,10 @@ bool Tunnel::handlePause() {
             isPaused = false;
             return true;
         } else if (choice == 2) {
+            if (game.save(SAVE_FILE)) std::cout << "  Game saved!\n";
+            else std::cerr << "  Failed to save.\n";
+            Sleep(700);
+        } else if (choice == 3) {
             isPaused = false;
             return false;
         } else {
@@ -464,12 +472,22 @@ void Tunnel::recordResult(const std::string& filename, GameMode mode, bool win) 
         std::cout << "  Enter your name for the rankboard: ";
         std::cin.ignore(10000, '\n');
         if (!std::getline(std::cin, name)) { name = "Player"; break; }
+        while (!name.empty() && (name[name.size()-1] == '\r' || name[name.size()-1] == '\n'))
+            name.erase(name.size()-1);
         bool ok = !name.empty();
         for (size_t i = 0; i < name.size(); i++) {
             if (!isalnum((unsigned char)name[i])) { ok = false; break; }
         }
-        if (ok) break;
-        std::cout << "  Name must be letters/digits only. Try again.\n";
+        if (!ok) {
+            std::cout << "  Name must be letters/digits only. Try again.\n";
+            continue;
+        }
+        bool occupied = rankBoard.nameExists(name);
+        if (occupied) {
+            std::cout << "  The username is occupied. Try another name.\n";
+            continue;
+        }
+        break;
     }
 
     SYSTEMTIME st;

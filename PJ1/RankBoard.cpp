@@ -94,6 +94,13 @@ void RankBoard::addEntry(const RankEntry& entry) {
     entries.push_back(e);
 }
 
+bool RankBoard::nameExists(const std::string& name) const {
+    for (size_t i = 0; i < entries.size(); i++) {
+        if (entries[i].name == name) return true;
+    }
+    return false;
+}
+
 void RankBoard::display() const {
     std::cout << "\n========== RANKBOARD ==========\n";
 

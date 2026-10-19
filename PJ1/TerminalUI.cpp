@@ -351,6 +351,7 @@ void TerminalUI::displayInvalidInput() {
     setColor(12, 0);
     std::cout << "  Invalid input! Try again.\n";
     resetColor();
+    Sleep(700);
 }
 
 void TerminalUI::pauseScreen() {
@@ -368,7 +369,8 @@ void TerminalUI::displayPauseMenu() {
     std::cout << "\n  ---------- PAUSED ----------\n";
     resetColor();
     std::cout << "  1. Continue\n";
-    std::cout << "  2. Quit to Main Menu\n";
+    std::cout << "  2. Save Game\n";
+    std::cout << "  3. Quit to Main Menu\n";
     std::cout << "  Choose: ";
 }
 

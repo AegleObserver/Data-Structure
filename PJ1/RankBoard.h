@@ -22,6 +22,7 @@ public:
     void load();
     void save();
     void addEntry(const RankEntry& entry);
+    bool nameExists(const std::string& name) const;
     void display() const;
     void setFilename(const std::string& filename);
 
